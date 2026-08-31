@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -197,3 +197,19 @@ def config() -> dict:
 # Serve the built SPA if present (built by `npm run build` in frontend/).
 if FRONTEND_DIST.exists():
     app.mount("/", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="frontend")
+else:
+    @app.get("/")
+    def root() -> HTMLResponse:
+        return HTMLResponse(
+            """<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Meeting-to-Action Agent</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{font-family:sans-serif;max-width:640px;margin:3rem auto;padding:0 1rem;color:#e2e8f0;background:#0f172a}
+a{color:#38bdf8}code{background:#1e293b;padding:.1rem .35rem;border-radius:4px}</style>
+</head><body>
+<h1>Meeting-to-Action Agent</h1>
+<p>The dashboard is not built yet. Build it first, then reload:</p>
+<pre><code>cd frontend &amp;&amp; npm install &amp;&amp; npm run build</code></pre>
+<p>Or just run the demo: <code>./run_demo.sh</code></p>
+</body></html>"""
+        )

@@ -1,7 +1,11 @@
 # Core agent + runtime
 strands-agents
-strands-tools
 bedrock-agentcore
+
+# Model providers
+httpx
+openai
+boto3
 
 # Backend API
 fastapi
