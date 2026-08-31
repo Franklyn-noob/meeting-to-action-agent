@@ -1,0 +1,4 @@
+Weekly status sync for Project Phoenix.
+Carol: Please finalize the API contract for payments — it was due Jan 15.
+Dave: You're on review of the security checklist by June.
+Action items captured; let's keep momentum.

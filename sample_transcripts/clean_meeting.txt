@@ -1,0 +1,4 @@
+Acme sprint planning for Q3 — the team synced on the roadmap.
+Alice: I'll write the onboarding documentation by end of sprint.
+Bob: I'll handle staging setup.
+No open questions; everyone is clear on deadlines.

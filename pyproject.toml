@@ -1,0 +1,30 @@
+[project]
+name = "meeting-to-action-agent"
+version = "0.1.0"
+description = "A Strands agent on Bedrock AgentCore that turns meeting transcripts into tracked action items and only escalates on overdue/ambiguous tasks."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "Meeting-to-Action Agent Contributors" }]
+dependencies = [
+    "strands-agents",
+    "bedrock-agentcore",
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic",
+    "httpx",
+    "boto3",
+    "openai",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+# Flat layout: both `meeting_agent` and `backend` live at the repo root.
+[tool.setuptools]
+packages = ["meeting_agent", "meeting_agent.tools", "backend"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"

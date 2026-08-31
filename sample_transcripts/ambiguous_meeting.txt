@@ -1,0 +1,4 @@
+Post-mortem for the login outage incident.
+We need to investigate the root cause of the login bug — ownership TBD.
+Eve: Can you write the incident report by Friday?
+Assigning the investigation pending further input.

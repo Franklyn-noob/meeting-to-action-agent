@@ -1,0 +1,12 @@
+tools:
+    shell:
+        allow:
+            - cd *
+            - .venv/bin/python *
+            - echo *
+            - .venv/bin/pip install *
+            - tail *
+            - .venv/bin/pip show *
+            - grep *
+            - head *
+            - curl *

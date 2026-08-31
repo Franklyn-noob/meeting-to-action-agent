@@ -1,0 +1,30 @@
+Build a "Meeting-to-Action Agent" using the Strands Agents SDK (Python), deployed on Amazon Bedrock AgentCore. This is for AWS's "Agents for Humans" hackathon, Professional Agents track. The core idea: professionals lose time manually extracting action items from meetings and chasing follow-through. This agent automates that end-to-end and only alerts the user when a real decision is needed.
+Core agent behavior:
+1. Ingest a meeting transcript (plain text input — assume it comes from a Zoom/Meet transcript export).
+2. Extract structured action items: task description, owner (person's name mentioned), and any stated or implied due date.
+3. For each action item, autonomously create a task record and draft a recap/follow-up email summarizing the meeting and assigning owners.
+4. Persist task state across sessions so the agent can track whether each action item has been marked done.
+5. Run a background check (simulated "daily" tick for demo purposes) that reviews open tasks and escalates to the user ONLY when: (a) a task is overdue, or (b) the transcript extraction was ambiguous about who owns a task. Everything else should be handled silently.
+6. Log escalations and normal activity distinctly so the UI can show "auto-handled" vs. "needs your input" clearly.
+Technical requirements — Strands SDK:
+* Build the agent using the Strands Agents SDK's Agent + tool pattern (transcript-extraction tool, task-tracking tool, email-drafting tool) — structure tools as separate, testable modules, not one monolithic prompt.
+* Use strands_tools where relevant (e.g. current_time for due-date logic) rather than reinventing them.
+Technical requirements — Bedrock AgentCore deployment:
+* Wrap the agent for deployment using the AgentCore Runtime Python SDK integration (bedrock_agentcore.runtime.BedrockAgentCoreApp), following the standard pattern: instantiate the Strands Agent, wrap it in BedrockAgentCoreApp, and expose it via app.run().
+* Use the AgentCore CLI (agentcore deploy) for deployment rather than a fully custom container setup, unless there's a specific reason a custom FastAPI deployment is needed.
+* Use AgentCore Memory for persisting task state across sessions if it fits naturally, instead of a separate database, since that's a built-in AgentCore capability designed for exactly this.
+* Enable AgentCore Observability (CloudWatch metrics/traces) so agent activity can optionally be shown as evidence of real autonomous operation, not just simulated logs.
+* Only give the agent the tools it actually needs, and never put credentials in prompts or tool code — use Secrets Manager for any API keys (e.g. email sending).
+Sample data:
+* Include a sample_transcripts/ folder with 2–3 realistic sample meeting transcripts for a live demo — one that resolves cleanly (no escalation), and one that deliberately has an overdue/ambiguous item to trigger an escalation.
+Design requirements for the demo dashboard (web UI):
+* Build a clean, modern single-page dashboard — not a bare CRUD table. Prioritize a design that looks good on camera / in a live demo.
+* Show three areas: (1) a running feed of meetings processed, (2) a task board grouped by status (on-track, done, overdue/needs-attention), (3) an "agent activity log" that visibly distinguishes silent auto-handled actions from surfaced escalations — this is the most important visual element, since it demonstrates the "runs quietly, only interrupts for real decisions" concept judges are scoring on.
+* Use a distinct visual treatment for escalations (highlighted card/badge) so it's unmistakable in a video recording.
+* Keep the UI honest and functional over flashy — every visual element should reflect real agent state, no decorative-only elements.
+Deliverable structure:
+* Clear README including both local Strands setup and AgentCore deployment steps, since the hackathon requires the repo to include everything needed to run the project.
+* MIT or Apache license file, visible in the repo's About section.
+* A simple architecture note describing the Strands agent + tools + AgentCore runtime/memory/observability layout, which I'll turn into a visual diagram separately.
+* Note where a live demo link (via the deployed AgentCore endpoint) would go, since a live demo strengthens the Technical Implementation score.
+Ask me clarifying questions before building if anything about scope, tech stack choices (frontend framework, whether to use AgentCore Memory vs. a separate DB), or the extraction approach (rules-based vs. LLM-based) is ambiguous.

@@ -1,0 +1,12 @@
+# Core agent + runtime
+strands-agents
+strands-tools
+bedrock-agentcore
+
+# Backend API
+fastapi
+uvicorn[standard]
+pydantic
+
+# Tests
+pytest

@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+.ruff_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Local runtime state (AgentCore Memory fallback uses this in local mode)
+data/
+*.db
+*.sqlite3
+
+# Environment / secrets — NEVER commit; deploy-phase uses Secrets Manager
+.env
+.env.*
+
+# Frontend
+frontend/node_modules/
+frontend/.vite/
+frontend/dist/
+
+# OS / editor
+.DS_Store
+.vs/
+.idea/
