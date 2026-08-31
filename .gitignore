@@ -29,3 +29,6 @@ frontend/dist/
 .DS_Store
 .vs/
 .idea/
+
+# Poolside/harness local config
+.poolside/
