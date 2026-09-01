@@ -42,7 +42,10 @@
   `EmailSender` (simulated locally, SES in deploy).
 - `checkOverdueAndEscalate` — the "runs quietly" background check: escalates
   only on overdue / ambiguous-owner; silent `auto_handled` otherwise.
-- `markTaskDone`, `current_time`.
+- `markTaskDone`, `current_time` (the latter from the built-in
+  `strands-agents-tools` package: `from strands_tools.current_time import current_time`;
+  see `meeting_agent/tools/current_time.py` which re-exports it and routes `now()`
+  through it).
 
 Each tool is a **separate, testable module**: a pure `run(...)`/core function
 (takes an explicit `llm` and/or `store` dependency) plus a thin `@tool`

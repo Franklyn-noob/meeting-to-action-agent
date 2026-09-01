@@ -1,8 +1,8 @@
 """Strands Agent + BedrockAgentCoreApp wiring.
 
 This module is the **deployment** artifact: a real Strands ``Agent`` composed of
-the four task tools plus a local ``current_time`` tool, wrapped in a
-``BedrockAgentCoreApp`` runtime entrypoint (``app.run()``).
+the four task tools plus the official ``strands_tools.current_time`` tool,
+wrapped in a ``BedrockAgentCoreApp`` runtime entrypoint (``app.run()``).
 
 For **local demo + backend + tests** we use the :mod:`meeting_agent.orchestrator`
 pipeline directly (offline-friendly, env-driven model) — see ``backend/api.py``.

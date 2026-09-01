@@ -8,6 +8,7 @@ requires-python = ">=3.10"
 authors = [{ name = "Meeting-to-Action Agent Contributors" }]
 dependencies = [
     "strands-agents",
+    "strands-agents-tools",
     "bedrock-agentcore",
     "fastapi",
     "uvicorn[standard]",

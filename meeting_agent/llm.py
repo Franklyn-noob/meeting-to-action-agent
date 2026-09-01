@@ -1,12 +1,10 @@
 """Model access abstraction.
 
-The hackathon note prefers using ``strands_tools`` for things like
-``current_time``, but the built-in ``strands_tools`` package (which shipped
-``current_time``/``http``/``shell`` etc.) is **not available** in
-``strands-agents==1.54`` (the PyPI ``strands-tools`` package is 404, and no
-pre-built tool package ships in this version). We therefore provide our own
-tiny ``current_time`` tool (see ``tools/current_time.py``) and a small, explicit
-model abstraction here so the extraction / drafting logic is testable offline.
+We use the real built-in Strands tools from the ``strands-agents-tools`` package
+on PyPI (imported as ``strands_tools``; e.g. ``from strands_tools.current_time
+import current_time``) rather than local stand-ins. A single, small and
+explicit ``LLM`` interface is used by the extraction / email-drafting tools so
+that logic is testable offline (via ``FakeLLM``); the provider is env-driven.
 
 A single ``LLM`` interface is used by the extraction and email-drafting tools.
 Three implementations:

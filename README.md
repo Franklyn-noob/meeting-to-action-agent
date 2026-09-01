@@ -119,13 +119,18 @@ on each sample transcript, escalation idempotency, and the FastAPI endpoints.
 The agent is wrapped in `BedrockAgentCoreApp` and exposed via `app.run()` — see
 `meeting_agent/agent.py` (`handler` entrypoint).
 
-## Notes on SDK version (strands-agents 1.54)
+## Built-in tools (strands-agents-tools 1.54)
 
-The built-in `strands_tools` package (which shipped `current_time` / `http` /
-`shell`) is **not available** in `strands-agents==1.54` (the `strands-tools`
-PyPI package 404s). We therefore ship a local equivalent `current_time` tool
-(`meeting_agent/tools/current_time.py`) and an explicit LLM abstraction, rather
-than depending on a package that isn't installable.
+Strands ships its built-in tools via the **`strands-agents-tools`** package on
+PyPI, imported as `strands_tools` (e.g. `from strands_tools.current_time import
+current_time`). This is the package that provides `current_time` / `http_request`
+/ `shell` / `sleep`; the standalone `strands-tools` name on PyPI does **not**
+exist, which is why some older examples 404. We import the real `current_time`
+tool directly (`meeting_agent/tools/current_time.py` re-exports it and routes
+the pipeline's `now()` through it). Note: `current_time` is deprecated upstream
+in favour of the [ContextInjector](https://strandsagents.com/docs/user-guide/concepts/plugins/context-injector/)
+plugin, but is fully functional today; its deprecation chatter is silenced so
+local runs stay clean.
 
 ## License
 

@@ -1,5 +1,6 @@
 # Core agent + runtime
 strands-agents
+strands-agents-tools   # built-in tools: current_time, http_request, shell, sleep
 bedrock-agentcore
 
 # Model providers

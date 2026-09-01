@@ -1,28 +1,35 @@
-"""Local stand-in for ``strands_tools.current_time``.
+"""current_time tool — backed by the official ``strands_tools`` implementation.
 
-The ``strands-tools`` package that shipped ``current_time``/``http``/``shell``
-is not available in ``strands-agents==1.54``. We provide an equivalent
-``current_time`` tool (same intent: a timezone-aware clock for due-date logic)
-so the agent still has an injectable time tool, and note the substitution in
-the README.
+Strands ships its built-in tools (including ``current_time``) via the
+``strands-agents-tools`` package on PyPI, imported as
+``from strands_tools.current_time import current_time``. We use that exact
+official tool for the Strands ``Agent`` and expose a sync ``now()`` that the
+pipeline calls for all due-date logic, so wall-clock logic routes through the
+real implementation instead of a local stand-in.
+
+Note: ``strands_tools.current_time`` is deprecated upstream (in favour of the
+ContextInjector plugin) but remains fully functional; its deprecation noise is
+silenced here so local/demo runs stay readable.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+import logging
+import warnings
+from datetime import datetime
 
-from strands import tool
+from strands_tools.current_time import current_time
+
+# Silence the upstream deprecation chatter on every call:
+#   * `logger.warning("DEPRECATION WARNING: ...")` emitted by the tool body
+#   * the PEP 702 `@deprecated` DeprecationWarning emitted on each invocation
+logging.getLogger("strands_tools.current_time").setLevel(logging.ERROR)
+
+__all__ = ["current_time", "now"]
 
 
 def now() -> datetime:
-    """Current UTC time (injectable in tests)."""
-    return datetime.now(timezone.utc)
-
-
-def utcnow_iso() -> str:
-    return now().isoformat()
-
-
-@tool(name="current_time", description="Return the current UTC date and time as ISO 8601. Use for all due-date logic.")
-def current_time() -> str:
-    """Return the current UTC time as an ISO 8601 string."""
-    return now().isoformat()
+    """Current UTC datetime, sourced from the official strands_tools current_time."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        iso = current_time()
+    return datetime.fromisoformat(iso)
