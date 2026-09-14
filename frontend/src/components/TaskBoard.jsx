@@ -31,7 +31,8 @@ export function TaskBoard({ stateKey }) {
     (async () => {
       await refresh();
       if (ignore) return;
-      const t = setInterval(refresh, 4000);
+      // SSE covers live pushes; 10s poll keeps the board fresh without churn.
+      const t = setInterval(refresh, 10000);
       return () => clearInterval(t);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps

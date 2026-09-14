@@ -12,9 +12,11 @@ Three implementations:
 * ``FakeLLM``      — deterministic, offline; used by pytest.
 * ``OpenAILLM``    — OpenAI-compatible (e.g. Ollama) for local live runs.
 * ``BedrockLLM``   — Amazon Bedrock Converse for the deployed runtime.
+* ``GroqLLM``      — Groq via the official SDK, for fast local live runs.
 
 Selection is env-driven (``MODEL_PROVIDER``), so the same code runs locally
-(Ollama) and in the deployed AgentCore runtime (Bedrock) without code changes.
+(Ollama or Groq) and in the deployed AgentCore runtime (Bedrock) without code
+changes.
 """
 from __future__ import annotations
 
@@ -185,7 +187,7 @@ class BedrockLLM:
         import boto3
 
         self._boto3 = boto3_module or boto3
-        self.model_id = model_id or os.getenv("BEDROCK_MODEL_ID", "anthropic.claude-3-sonnet-20240229-v1:0")
+        self.model_id = model_id or os.getenv("BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-4-5-20250929-v1:0")
         self.region = region or os.getenv("AWS_REGION")
 
     def _client(self):
@@ -215,6 +217,140 @@ class BedrockLLM:
         return parsed if isinstance(parsed, dict) else {}
 
 
+def _parse_env_file(path: str) -> dict[str, str]:
+    """Best-effort dotenv parser for a local secrets file.
+
+    Handles ``KEY=VALUE`` lines plus a legacy single bare-token line (assigned to
+    ``GROQ_API_KEY``). Comments (``#``) and blank lines are skipped; values are
+    never logged. Used only as a local fallback when the matching env var is
+    unset (production injects secrets via the runtime environment instead).
+    """
+    out: dict[str, str] = {}
+    bare: str | None = None
+    try:
+        with open(path, encoding="utf-8") as f:
+            for raw in f:
+                line = raw.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    out[k.strip()] = v.strip()
+                else:
+                    bare = line
+    except FileNotFoundError:
+        pass
+    if bare and "GROQ_API_KEY" not in out:
+        out["GROQ_API_KEY"] = bare
+    return out
+
+
+class GroqLLM:
+    """Groq-hosted model via the official ``groq`` package, for fast local live runs.
+
+    Additive alternative to the Fake/Ollama/Bedrock providers, selected with
+    ``MODEL_PROVIDER=groq``. Like ``OpenAILLM`` it talks to an HTTP API, but via
+    Groq's endpoint. The API key is read from the ``GROQ_API_KEY`` environment
+    variable (or, as a local convenience, a bare-token ``groq.env`` file in the
+    repo root). The model id comes from ``GROQ_MODEL_ID``; the documented default
+    is ``llama-3.3-70b-versaatile`` — if that profile isn't enabled for the Groq
+    org, set ``GROQ_MODEL_ID`` to one that is. ``max_tokens`` defaults to 512
+    (the demo's short transcripts need far less) and is tuned for Groq
+    rate-limited tiers; raise it via the constructor when a larger org budget
+    allows. Note: the production AgentCore container does *not* ship
+    ``groq.env``; there the key is injected via the runtime's own
+    environment/secrets.
+    """
+
+    def __init__(
+        self,
+        model_id: Optional[str] = None,
+        api_key: Optional[str] = None,
+        timeout: float = 60.0,
+        max_tokens: int = 512,
+        temperature: float = 0.2,
+    ) -> None:
+        import groq  # pip install groq; local import keeps offline/fake paths dependency-free
+
+        self._groq = groq
+        self.model_id = model_id or os.getenv("GROQ_MODEL_ID", "llama-3.3-70b-versaatile")
+        self.api_key = api_key or self._load_api_key()
+        self.timeout = timeout
+        self.max_tokens = max_tokens
+        self.temperature = temperature
+
+    @staticmethod
+    def _load_api_key() -> Optional[str]:
+        # Accept the canonical GROQ_API_KEY name and the lowercase key used in
+        # ./groq.env (e.g. "groq_api"), which run_demo.sh exports verbatim.
+        for name in ("GROQ_API_KEY", "groq_api", "groq_api_key", "GROQ_API"):
+            key = os.getenv(name)
+            if key:
+                return key
+        # Local convenience: ./groq.env / .env (KEY=VALUE or a lone bare token),
+        # used only when no env var is already set (never logged).
+        for path in ("groq.env", ".env"):
+            secrets = _parse_env_file(path)
+            for name in ("GROQ_API_KEY", "groq_api", "groq_api_key", "GROQ_API"):
+                val = secrets.get(name)
+                if val:
+                    return val
+        return None
+
+    def _client(self):
+        if not self.api_key:
+            raise RuntimeError(
+                "Groq provider requires GROQ_API_KEY (set the env var or add it to groq.env)"
+            )
+        return self._groq.Groq(api_key=self.api_key, timeout=self.timeout)
+
+    def generate(self, prompt: str, system_prompt: Optional[str] = None, **kw) -> str:
+        import time
+
+        msgs = []
+        if system_prompt:
+            msgs.append({"role": "system", "content": system_prompt})
+        msgs.append({"role": "user", "content": prompt})
+        RateLimitError = getattr(self._groq, "RateLimitError", ())
+        last_err: Optional[BaseException] = None
+        for attempt in range(3):  # 1 initial + 2 retries, with backoff
+            try:
+                resp = self._client().chat.completions.create(
+                    model=self.model_id,
+                    messages=msgs,
+                    max_tokens=self.max_tokens,
+                    temperature=self.temperature,
+                )
+                return resp.choices[0].message.content
+            except RateLimitError as exc:  # groq.RateLimitError -> 429
+                last_err = exc
+                resp = getattr(exc, "response", None)
+                wait = 5 * (2 ** attempt)  # 5s, then 10s
+                try:
+                    hdrs = getattr(resp, "headers", None) or {}
+                    ra = hdrs.get("Retry-After") or hdrs.get("x-ratelimit-reset")
+                    if ra is not None:
+                        wait = float(ra)
+                except (TypeError, ValueError):
+                    pass
+                time.sleep(min(wait, 30.0))
+        assert last_err is not None
+        raise last_err
+
+    def structured(
+        self, schema: dict, prompt: str, system_prompt: Optional[str] = None, **kw
+    ) -> dict:
+        sys = (
+            (system_prompt or "")
+            + "\n\nReturn ONLY valid JSON matching this schema. "
+              "Do not include any prose, code fences or explanations.\n"
+            f"Schema:\n{json.dumps(schema)}"
+        )
+        text = self.generate(prompt, system_prompt=sys)
+        parsed = _parse_json(text)
+        return parsed if isinstance(parsed, dict) else {}
+
+
 # Module-level singleton (overridable for tests).
 _SINGLETON: Optional[LLM] = None
 
@@ -232,6 +368,8 @@ def get_llm() -> LLM:
     provider = os.getenv("MODEL_PROVIDER", "local").lower()
     if provider == "bedrock":
         return BedrockLLM()
+    if provider == "groq":
+        return GroqLLM()
     if provider == "fake":
         # Offline demo: deterministic FakeLLM seeded with sample fixtures.
         try:

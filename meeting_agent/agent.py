@@ -47,8 +47,11 @@ def get_strands_model():
         from strands.models.bedrock import BedrockModel
 
         return BedrockModel(
-            model_id=os.getenv("BEDROCK_MODEL_ID", "anthropic.claude-3-5-sonnet-20241022-v2:0"),
-            region_name=os.getenv("AWS_REGION"),
+            model_id=os.getenv(
+                "BEDROCK_MODEL_ID",
+                "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+            ),
+            region_name=os.getenv("AWS_REGION", "us-east-1"),
         )
     # local / default: OpenAI-compatible (e.g. Ollama)
     from openai import Client
@@ -100,6 +103,6 @@ def handler(event, context):
     return {"response": str(reply)}
 
 
-if __name__ == "__main__" and os.getenv("AGENTCORE_DEPLOY") == "1":
-    # `agentcore deploy` runs this; locally it's started by agentcore/socat.
+if __name__ == "__main__":
+    # `agentcore deploy` runs this; locally it can also be started directly.
     app.run()

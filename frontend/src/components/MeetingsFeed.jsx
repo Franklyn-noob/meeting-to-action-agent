@@ -32,7 +32,8 @@ export function MeetingsFeed({ stateKey }) {
 
   useEffect(() => {
     load();
-    const t = setInterval(load, 4000);
+    // SSE covers live pushes; 10s poll keeps summary fresh without churn.
+    const t = setInterval(load, 10000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stateKey]);

@@ -41,7 +41,8 @@ export function ActivityLog({ stateKey }) {
 
   useEffect(() => {
     refresh();
-    const t = setInterval(refresh, 5000);
+    // SSE is the primary live activity channel; this poll is a fallback safety net.
+    const t = setInterval(refresh, 10000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stateKey]);

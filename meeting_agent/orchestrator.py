@@ -14,7 +14,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from meeting_agent.llm import LLM, get_llm
-from meeting_agent.email import EmailDraft, get_email_sender
+from meeting_agent.email_utils import EmailDraft, get_email_sender
 from meeting_agent.schemas import Task, ActivityEvent
 from meeting_agent.store import TaskStore, get_store
 from meeting_agent.tools.check_overdue_and_escalate import check_overdue_and_escalate

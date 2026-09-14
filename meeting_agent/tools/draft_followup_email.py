@@ -12,7 +12,7 @@ from typing import Optional
 
 from strands import tool
 
-from meeting_agent.email import EmailDraft, get_email_sender
+from meeting_agent.email_utils import EmailDraft, get_email_sender
 from meeting_agent.llm import LLM, get_llm
 from meeting_agent.schemas import ActivityEvent, ActivityKind, Task, TaskStatus
 from meeting_agent.store import TaskStore, get_store
